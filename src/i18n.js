@@ -1,10 +1,10 @@
 export const DEFAULT_LOCALE = 'zh-CN'
 
 export const LANGUAGE_OPTIONS = [
-  { value: 'zh-CN', label: '简体中文' },
-  { value: 'zh-TW', label: '繁體中文' },
-  { value: 'ja', label: '日本語' },
-  { value: 'en', label: 'English' },
+  { value: 'zh-CN', label: '简', fullLabel: '简体中文' },
+  { value: 'zh-TW', label: '繁', fullLabel: '繁體中文' },
+  { value: 'ja', label: '日', fullLabel: '日本語' },
+  { value: 'en', label: '英', fullLabel: 'English' },
 ]
 
 const messages = {
@@ -48,6 +48,7 @@ const messages = {
     exportKicker: 'Export',
     settingsTitle: 'PDF 排版',
     closeSettings: '关闭设置',
+    resetDefaults: '恢复默认参数',
     pageSize: '页面大小',
     marginsMm: '页边距 mm',
     marginTop: '上',
@@ -135,6 +136,7 @@ const messages = {
     exportKicker: 'Export',
     settingsTitle: 'PDF 排版',
     closeSettings: '關閉設定',
+    resetDefaults: '恢復預設參數',
     pageSize: '頁面大小',
     marginsMm: '頁邊距 mm',
     marginTop: '上',
@@ -222,6 +224,7 @@ const messages = {
     exportKicker: 'Export',
     settingsTitle: 'PDF レイアウト',
     closeSettings: '設定を閉じる',
+    resetDefaults: 'デフォルトに戻す',
     pageSize: 'ページサイズ',
     marginsMm: '余白 mm',
     marginTop: '上',
@@ -309,6 +312,7 @@ const messages = {
     exportKicker: 'Export',
     settingsTitle: 'PDF layout',
     closeSettings: 'Close settings',
+    resetDefaults: 'Reset defaults',
     pageSize: 'Page size',
     marginsMm: 'Margins mm',
     marginTop: 'Top',

@@ -1,28 +1,16 @@
 import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js/lib/core'
-import bash from 'highlight.js/lib/languages/bash'
-import css from 'highlight.js/lib/languages/css'
-import javascript from 'highlight.js/lib/languages/javascript'
-import json from 'highlight.js/lib/languages/json'
-import markdown from 'highlight.js/lib/languages/markdown'
-import python from 'highlight.js/lib/languages/python'
-import typescript from 'highlight.js/lib/languages/typescript'
-import xml from 'highlight.js/lib/languages/xml'
+import hljs from 'highlight.js/lib/common'
 import texmath from 'markdown-it-texmath'
 import katex from 'katex'
 
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('html', xml)
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('js', javascript)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('markdown', markdown)
-hljs.registerLanguage('md', markdown)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('typescript', typescript)
-hljs.registerLanguage('ts', typescript)
-hljs.registerLanguage('vue', xml)
+hljs.registerAliases(['vue'], { languageName: 'xml' })
+
+function resolveLanguage(info) {
+  const [rawLanguage = ''] = String(info || '').trim().split(/\s+/)
+  const normalizedLanguage = rawLanguage.toLowerCase()
+
+  return normalizedLanguage && hljs.getLanguage(normalizedLanguage) ? normalizedLanguage : null
+}
 
 const md = new MarkdownIt({
   html: false,
@@ -30,13 +18,16 @@ const md = new MarkdownIt({
   typographer: true,
   breaks: false,
   highlight(code, lang) {
-    const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
-    const languageClass = language === 'plaintext' ? 'language-plaintext' : `language-${language}`
+    const language = resolveLanguage(lang)
+    const shouldAutoDetect = !language && Boolean(String(lang || '').trim())
+    const languageClass = language ? `language-${language}` : shouldAutoDetect ? 'language-auto' : 'language-plaintext'
 
     try {
-      const highlighted = language === 'plaintext'
-        ? md.utils.escapeHtml(code)
-        : hljs.highlight(code, { language }).value
+      const highlighted = language
+        ? hljs.highlight(code, { language, ignoreIllegals: true }).value
+        : shouldAutoDetect
+          ? hljs.highlightAuto(code).value
+          : md.utils.escapeHtml(code)
 
       return `<pre><code class="hljs ${languageClass}">${highlighted}</code></pre>`
     } catch {

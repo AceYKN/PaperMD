@@ -29,8 +29,8 @@
   --blockquote-bg: #f4f8f7;
   --blockquote-text: #4c5d6e;
   --table-head: #f2f6f8;
-  --inline-code-bg: #fff1f3;
-  --inline-code-text: #9f1239;
+  --inline-code-bg: #edf2f6;
+  --inline-code-text: #314556;
   --code-bg: #1e2935;
   --code-text: #d6deeb;
   --hljs-comment: #8a94a1;
@@ -104,8 +104,8 @@ button {
   --blockquote-bg: #13241f;
   --blockquote-text: #bdd0dc;
   --table-head: #1d2934;
-  --inline-code-bg: #321b26;
-  --inline-code-text: #ffb1c2;
+  --inline-code-bg: #202a35;
+  --inline-code-text: #d7e4ee;
   --code-bg: #0d1219;
   --code-text: #d7e4ee;
   --hljs-comment: #8b949e;
@@ -162,6 +162,40 @@ button {
   white-space: nowrap;
 }
 
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+  flex-shrink: 0;
+}
+
+.dot-saved {
+  background: #34c759;
+}
+
+.dot-saving {
+  background: #f5a623;
+  animation: dot-pulse 1.1s ease-in-out infinite;
+}
+
+.dot-error {
+  background: #ff3b30;
+}
+
+.dot-idle {
+  background: transparent;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -196,9 +230,6 @@ button {
   color: var(--text);
 }
 
-.language-switch {
-  min-width: 132px;
-}
 
 .ghost-button,
 .primary-button,
@@ -454,6 +485,16 @@ input[type="range"] {
   padding: 16px;
 }
 
+.settings-actions {
+  display: flex;
+  padding: 0 16px 16px;
+}
+
+.reset-settings {
+  width: 100%;
+  justify-content: center;
+}
+
 .field,
 .field-group {
   display: grid;
@@ -695,6 +736,7 @@ input[type="range"] {
   padding: 0.18em 0.36em;
   color: var(--inline-code-text);
   background: var(--inline-code-bg);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   border-radius: 5px;
 }
 
@@ -732,10 +774,7 @@ input[type="range"] {
   font-size: 2.08em;
 }
 
-.theme-minimal h2 {
-  border-top: 1px solid var(--border);
-  padding-top: 18px;
-}
+
 
 .theme-minimal blockquote {
   background: transparent;
@@ -888,10 +927,6 @@ input[type="range"] {
     padding: 0 8px;
   }
 
-  .topbar-actions .toolbar-select select {
-    max-width: 92px;
-  }
-
   .preview-header {
     align-items: flex-start;
     flex-direction: column;
@@ -919,8 +954,8 @@ input[type="range"] {
     --blockquote-bg: #f4f8f7;
     --blockquote-text: #4c5d6e;
     --table-head: #f2f6f8;
-    --inline-code-bg: #f4f4f5;
-    --inline-code-text: #9f1239;
+    --inline-code-bg: #eef2f6;
+    --inline-code-text: #374151;
     --code-bg: #f6f8fa;
     --code-text: #24292f;
     --hljs-comment: #6e7781;

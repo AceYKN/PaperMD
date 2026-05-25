@@ -5,15 +5,14 @@
         <FileText :size="22" stroke-width="2.2" />
         <div>
           <strong>{{ t('appName') }}</strong>
-          <span>{{ saveStatus }}</span>
+          <span><i class="status-dot" :class="saveStateDotClass" aria-hidden="true"></i>{{ saveStatus }}</span>
         </div>
       </div>
 
       <div class="topbar-actions">
-        <label class="toolbar-select language-switch">
-          <span>{{ t('language') }}</span>
+        <label class="toolbar-select" :title="currentLanguageLabel">
           <select v-model="settings.locale" :aria-label="t('language')">
-            <option v-for="option in languageOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            <option v-for="option in languageOptions" :key="option.value" :value="option.value">{{ option.fullLabel }}</option>
           </select>
         </label>
 
@@ -155,20 +154,38 @@
             <div class="margin-grid">
               <label v-for="item in marginFields" :key="item.key" class="mini-field">
                 <span>{{ item.label }}</span>
-                <input v-model.number="settings.margins[item.key]" type="number" min="0" max="60" step="1" />
+                <input
+                  v-model.number="settings.margins[item.key]"
+                  type="number"
+                  :min="MARGIN_MIN"
+                  :max="MARGIN_MAX"
+                  step="1"
+                />
               </label>
             </div>
           </div>
 
           <label class="field">
             <span>{{ t('fontSizeLabel', { value: settings.fontSize }) }}</span>
-            <input v-model.number="settings.fontSize" type="range" min="12" max="22" step="1" />
+            <input v-model.number="settings.fontSize" type="range" :min="FONT_SIZE_MIN" :max="FONT_SIZE_MAX" step="1" />
           </label>
 
           <label class="field">
             <span>{{ t('lineHeightLabel', { value: lineHeightValue }) }}</span>
-            <input v-model.number="settings.lineHeight" type="range" min="1.2" max="2.2" step="0.1" />
+            <input
+              v-model.number="settings.lineHeight"
+              type="range"
+              :min="LINE_HEIGHT_MIN"
+              :max="LINE_HEIGHT_MAX"
+              step="0.1"
+            />
           </label>
+        </div>
+
+        <div class="settings-actions">
+          <button class="ghost-button reset-settings" type="button" :title="t('resetDefaults')" @click="resetLayoutSettings">
+            <span>{{ t('resetDefaults') }}</span>
+          </button>
         </div>
 
         <div class="export-summary">
@@ -233,6 +250,12 @@ const SETTINGS_KEY = 'papermd:settings'
 const PAGE_SIZES = ['A4', 'A5', 'Letter']
 const THEMES = ['github', 'minimal']
 const COLOR_MODES = ['light', 'dark']
+const MARGIN_MIN = 0
+const MARGIN_MAX = 60
+const FONT_SIZE_MIN = 10
+const FONT_SIZE_MAX = 22
+const LINE_HEIGHT_MIN = 1.2
+const LINE_HEIGHT_MAX = 2.2
 
 const defaultSettings = {
   pageSize: 'A4',
@@ -261,6 +284,9 @@ let statusTimer = 0
 
 const pageSizes = PAGE_SIZES
 const languageOptions = LANGUAGE_OPTIONS
+const currentLanguageLabel = computed(
+  () => languageOptions.find((o) => o.value === settings.locale)?.fullLabel || t('language'),
+)
 
 const renderedHtml = computed(() => renderMarkdown(markdown.value))
 const wordCount = computed(() => markdown.value.replace(/\s/g, '').length)
@@ -320,6 +346,19 @@ const saveStatus = computed(() => {
   }
 })
 
+const saveStateDotClass = computed(() => {
+  switch (saveState.value.type) {
+    case 'saving': return 'dot-saving'
+    case 'saved':
+    case 'restored':
+    case 'imported':
+    case 'new': return 'dot-saved'
+    case 'unavailable':
+    case 'message': return 'dot-error'
+    default: return 'dot-idle'
+  }
+})
+
 function t(key, params = {}) {
   return getMessage(settings.locale, key, params)
 }
@@ -365,13 +404,13 @@ function loadStoredSettings() {
       theme: sanitizeTheme(saved.theme),
       colorMode: sanitizeColorMode(saved.colorMode),
       locale: resolveLocale(saved.locale || defaultSettings.locale),
-      fontSize: clampNumber(saved.fontSize, 12, 22, defaultSettings.fontSize),
-      lineHeight: clampNumber(saved.lineHeight, 1.2, 2.2, defaultSettings.lineHeight),
+      fontSize: clampNumber(saved.fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX, defaultSettings.fontSize),
+      lineHeight: clampNumber(saved.lineHeight, LINE_HEIGHT_MIN, LINE_HEIGHT_MAX, defaultSettings.lineHeight),
       margins: {
-        top: clampNumber(saved.margins?.top, 0, 60, defaultSettings.margins.top),
-        right: clampNumber(saved.margins?.right, 0, 60, defaultSettings.margins.right),
-        bottom: clampNumber(saved.margins?.bottom, 0, 60, defaultSettings.margins.bottom),
-        left: clampNumber(saved.margins?.left, 0, 60, defaultSettings.margins.left),
+        top: clampNumber(saved.margins?.top, MARGIN_MIN, MARGIN_MAX, defaultSettings.margins.top),
+        right: clampNumber(saved.margins?.right, MARGIN_MIN, MARGIN_MAX, defaultSettings.margins.right),
+        bottom: clampNumber(saved.margins?.bottom, MARGIN_MIN, MARGIN_MAX, defaultSettings.margins.bottom),
+        left: clampNumber(saved.margins?.left, MARGIN_MIN, MARGIN_MAX, defaultSettings.margins.left),
       },
     }
   } catch {
@@ -546,6 +585,13 @@ function closeSettings() {
 
 function toggleColorMode() {
   settings.colorMode = settings.colorMode === 'dark' ? 'light' : 'dark'
+}
+
+function resetLayoutSettings() {
+  settings.pageSize = defaultSettings.pageSize
+  settings.fontSize = defaultSettings.fontSize
+  settings.lineHeight = defaultSettings.lineHeight
+  Object.assign(settings.margins, defaultSettings.margins)
 }
 
 function updatePrintStyle() {
