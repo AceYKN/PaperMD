@@ -1,34 +1,47 @@
 <template>
   <div class="app-shell" :class="{ 'settings-open': isSettingsOpen, 'theme-dark': settings.colorMode === 'dark' }">
     <header class="topbar">
-      <div class="brand" aria-label="PaperMD">
+      <div class="brand" :aria-label="t('appName')">
         <FileText :size="22" stroke-width="2.2" />
         <div>
-          <strong>PaperMD</strong>
+          <strong>{{ t('appName') }}</strong>
           <span>{{ saveStatus }}</span>
         </div>
       </div>
 
       <div class="topbar-actions">
-        <button class="ghost-button" type="button" title="新建文档" @click="newDocument">
+        <label class="toolbar-select language-switch">
+          <span>{{ t('language') }}</span>
+          <select v-model="settings.locale" :aria-label="t('language')">
+            <option v-for="option in languageOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+
+        <button class="ghost-button" type="button" :title="t('newDocumentTitle')" @click="newDocument">
           <FilePlus :size="18" />
-          <span>新建</span>
+          <span>{{ t('newDocument') }}</span>
         </button>
-        <button class="ghost-button" type="button" title="导入 Markdown 或文本文件" @click="openFilePicker">
+        <button class="ghost-button" type="button" :title="t('importTitle')" @click="openFilePicker">
           <Upload :size="18" />
-          <span>导入</span>
+          <span>{{ t('import') }}</span>
         </button>
-        <button class="ghost-button settings-toggle" type="button" title="打开排版设置" @click="toggleSettings">
+        <button
+          class="ghost-button settings-toggle"
+          type="button"
+          :title="t('openSettings')"
+          :aria-expanded="isSettingsOpen"
+          @click="toggleSettings"
+        >
           <SlidersHorizontal :size="18" />
-          <span>排版</span>
+          <span>{{ t('typesetting') }}</span>
         </button>
         <button class="ghost-button" type="button" :title="colorModeTitle" @click="toggleColorMode">
           <component :is="settings.colorMode === 'dark' ? Sun : Moon" :size="18" />
-          <span>{{ settings.colorMode === 'dark' ? '日间' : '夜间' }}</span>
+          <span>{{ colorModeLabel }}</span>
         </button>
-        <button class="primary-button" type="button" title="导出 PDF" @click="printPdf">
+        <button class="primary-button" type="button" :title="t('exportPdfTitle')" @click="printPdf">
           <Printer :size="18" />
-          <span>导出 PDF</span>
+          <span>{{ t('exportPdf') }}</span>
         </button>
       </div>
     </header>
@@ -42,22 +55,22 @@
     />
 
     <main class="workspace">
-      <section class="editor-panel" :class="{ 'mobile-hidden': mobileMode !== 'edit' }" aria-label="Markdown 编辑器">
+      <section class="editor-panel" :class="{ 'mobile-hidden': mobileMode !== 'edit' }" :aria-label="t('editorAria')">
         <div class="panel-header">
           <div>
-            <span class="panel-kicker">Markdown</span>
-            <h1>编辑</h1>
+            <span class="panel-kicker">{{ t('editorKicker') }}</span>
+            <h1>{{ t('editorTitle') }}</h1>
           </div>
           <div class="document-stats">
-            <span>{{ wordCount }} 字</span>
-            <span>{{ lineCount }} 行</span>
+            <span>{{ wordCountLabel }}</span>
+            <span>{{ lineCountLabel }}</span>
           </div>
         </div>
 
-        <div class="shortcut-toolbar" aria-label="Markdown 快捷工具栏">
+        <div class="shortcut-toolbar" :aria-label="t('toolbarAria')">
           <button
             v-for="tool in toolbarTools"
-            :key="tool.label"
+            :key="tool.key"
             type="button"
             :title="tool.title"
             @mousedown.prevent
@@ -73,21 +86,20 @@
           v-model="markdown"
           class="markdown-input"
           spellcheck="false"
-          aria-label="Markdown 内容"
+          :aria-label="t('markdownContentAria')"
         />
       </section>
 
-      <section class="preview-panel" :class="{ 'mobile-hidden': mobileMode !== 'preview' }" aria-label="实时预览">
+      <section class="preview-panel" :class="{ 'mobile-hidden': mobileMode !== 'preview' }" :aria-label="t('previewAria')">
         <div class="panel-header preview-header">
           <div>
-            <span class="panel-kicker">Preview</span>
-            <h1>实时预览</h1>
+            <span class="panel-kicker">{{ t('previewKicker') }}</span>
+            <h1>{{ t('previewTitle') }}</h1>
           </div>
           <label class="theme-switch">
-            <span>主题</span>
-            <select v-model="settings.theme" aria-label="预览主题">
-              <option value="github">GitHub</option>
-              <option value="minimal">简约</option>
+            <span>{{ t('theme') }}</span>
+            <select v-model="settings.theme" :aria-label="t('previewThemeAria')">
+              <option v-for="theme in themeOptions" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
             </select>
           </label>
         </div>
@@ -100,27 +112,46 @@
         />
       </section>
 
-      <aside class="settings-panel" aria-label="PDF 排版设置" :aria-hidden="!isSettingsOpen" :inert="!isSettingsOpen">
+      <button
+        v-if="isSettingsOpen"
+        class="settings-backdrop"
+        type="button"
+        :aria-label="t('closeSettings')"
+        @click="closeSettings"
+      />
+
+      <aside
+        class="settings-panel"
+        :aria-label="t('settingsAria')"
+        :aria-hidden="!isSettingsOpen"
+        :inert="!isSettingsOpen"
+      >
         <div class="panel-header">
           <div>
-            <span class="panel-kicker">Export</span>
-            <h1>PDF 排版</h1>
+            <span class="panel-kicker">{{ t('exportKicker') }}</span>
+            <h1>{{ t('settingsTitle') }}</h1>
           </div>
-          <button class="icon-button close-settings" type="button" title="关闭设置" @click="isSettingsOpen = false">
+          <button
+            class="icon-button close-settings"
+            type="button"
+            :title="t('closeSettings')"
+            :aria-label="t('closeSettings')"
+            @click="closeSettings"
+          >
             <X :size="18" />
           </button>
         </div>
 
         <div class="settings-list">
           <label class="field">
-            <span>页面大小</span>
+            <span>{{ t('pageSize') }}</span>
             <select v-model="settings.pageSize">
               <option v-for="size in pageSizes" :key="size" :value="size">{{ size }}</option>
             </select>
           </label>
 
           <div class="field-group">
-            <span>页边距 mm</span>
+            <span>{{ t('marginsMm') }}</span>
             <div class="margin-grid">
               <label v-for="item in marginFields" :key="item.key" class="mini-field">
                 <span>{{ item.label }}</span>
@@ -130,12 +161,12 @@
           </div>
 
           <label class="field">
-            <span>正文字号 {{ settings.fontSize }}px</span>
+            <span>{{ t('fontSizeLabel', { value: settings.fontSize }) }}</span>
             <input v-model.number="settings.fontSize" type="range" min="12" max="22" step="1" />
           </label>
 
           <label class="field">
-            <span>行距 {{ settings.lineHeight.toFixed(1) }}</span>
+            <span>{{ t('lineHeightLabel', { value: lineHeightValue }) }}</span>
             <input v-model.number="settings.lineHeight" type="range" min="1.2" max="2.2" step="0.1" />
           </label>
         </div>
@@ -143,20 +174,19 @@
         <div class="export-summary">
           <span>{{ settings.pageSize }}</span>
           <span>{{ settings.margins.top }} / {{ settings.margins.right }} / {{ settings.margins.bottom }} / {{ settings.margins.left }} mm</span>
-          <span>{{ settings.fontSize }}px · {{ settings.lineHeight.toFixed(1) }}</span>
+          <span>{{ settings.fontSize }}px · {{ lineHeightValue }}</span>
         </div>
-
       </aside>
     </main>
 
-    <nav class="mobile-tabs" aria-label="移动端模式切换">
+    <nav class="mobile-tabs" :aria-label="t('mobileTabsAria')">
       <button type="button" :class="{ active: mobileMode === 'edit' }" @click="mobileMode = 'edit'">
         <Edit3 :size="18" />
-        <span>编辑</span>
+        <span>{{ t('editTab') }}</span>
       </button>
       <button type="button" :class="{ active: mobileMode === 'preview' }" @click="mobileMode = 'preview'">
         <Eye :size="18" />
-        <span>预览</span>
+        <span>{{ t('previewTab') }}</span>
       </button>
     </nav>
 
@@ -195,42 +225,14 @@ import {
   Upload,
   X,
 } from '@lucide/vue'
+import { DEFAULT_LOCALE, getMessage, getSampleMarkdown, isSampleMarkdown, LANGUAGE_OPTIONS, resolveLocale } from './i18n'
 import { renderMarkdown } from './markdown'
 
 const STORAGE_KEY = 'papermd:last-document'
 const SETTINGS_KEY = 'papermd:settings'
-
-const sampleMarkdown = `# PaperMD 示例文档
-
-PaperMD 是一款纯前端 Markdown 编辑器，支持实时预览、本地草稿、移动端快捷输入和浏览器原生 PDF 导出。
-
-## 核心能力
-
-- **实时预览**：输入后立即渲染 Markdown。
-- *移动友好*：手机端可在编辑与预览之间切换。
-- 支持表格、代码高亮、外链图片和数学公式。
-
-> 导出 PDF 时会应用右侧排版设置，并调用系统打印窗口。
-
-| 参数 | 说明 |
-| --- | --- |
-| 页面 | A4 / A5 / Letter |
-| 边距 | 上、右、下、左独立设置 |
-| 字体 | 正文字号与行距可调 |
-
-\`\`\`js
-const message = 'Hello, PaperMD'
-console.log(message)
-\`\`\`
-
-行内公式示例：$E = mc^2$
-
-块级公式示例：
-
-$$
-\\int_0^1 x^2 dx = \\frac{1}{3}
-$$
-`
+const PAGE_SIZES = ['A4', 'A5', 'Letter']
+const THEMES = ['github', 'minimal']
+const COLOR_MODES = ['light', 'dark']
 
 const defaultSettings = {
   pageSize: 'A4',
@@ -244,56 +246,112 @@ const defaultSettings = {
   fontSize: 16,
   lineHeight: 1.7,
   colorMode: 'light',
+  locale: resolveLocale(typeof navigator === 'undefined' ? DEFAULT_LOCALE : navigator.language),
 }
 
 const editorRef = ref(null)
 const fileInputRef = ref(null)
 const mobileMode = ref('edit')
 const isSettingsOpen = ref(false)
-const saveStatus = ref('正在读取本地草稿')
-const markdown = ref(loadStoredMarkdown())
 const settings = reactive(loadStoredSettings())
+const markdown = ref(loadStoredMarkdown(settings.locale))
+const saveState = ref({ type: 'loading' })
 let saveTimer = 0
 let statusTimer = 0
 
-const pageSizes = ['A4', 'A5', 'Letter']
-const marginFields = [
-  { key: 'top', label: '上' },
-  { key: 'right', label: '右' },
-  { key: 'bottom', label: '下' },
-  { key: 'left', label: '左' },
-]
+const pageSizes = PAGE_SIZES
+const languageOptions = LANGUAGE_OPTIONS
 
 const renderedHtml = computed(() => renderMarkdown(markdown.value))
 const wordCount = computed(() => markdown.value.replace(/\s/g, '').length)
 const lineCount = computed(() => markdown.value.split('\n').length)
+const lineHeightValue = computed(() => settings.lineHeight.toFixed(1))
+const wordCountLabel = computed(() => t('wordCount', { count: wordCount.value }))
+const lineCountLabel = computed(() => t('lineCount', { count: lineCount.value }))
 const previewStyle = computed(() => ({
   '--doc-font-size': `${settings.fontSize}px`,
   '--doc-line-height': settings.lineHeight,
 }))
-const colorModeTitle = computed(() => (settings.colorMode === 'dark' ? '切换到日间模式' : '切换到黑夜模式'))
-
-const toolbarTools = computed(() => [
-  { label: 'H1', title: '一级标题', icon: Heading1, action: () => prefixLines('# ') },
-  { label: 'B', title: '加粗', icon: Bold, action: () => wrapSelection('**', '**', '加粗文字') },
-  { label: 'I', title: '斜体', icon: Italic, action: () => wrapSelection('*', '*', '斜体文字') },
-  { label: '链接', title: '插入链接', icon: Link, action: insertLink },
-  { label: '代码', title: '行内代码', icon: Code2, action: () => wrapSelection('`', '`', 'code') },
-  { label: '代码块', title: '插入代码块', icon: Code2, action: insertCodeBlock },
-  { label: '引用', title: '引用', icon: Quote, action: () => prefixLines('> ') },
-  { label: '列表', title: '无序列表', icon: List, action: () => prefixLines('- ') },
-  { label: '编号', title: '有序列表', icon: ListOrdered, action: () => prefixOrderedLines() },
-  { label: '表格', title: '插入表格', icon: Table2, action: insertTable },
-  { label: '图片', title: '插入图片', icon: Image, action: insertImage },
-  { label: '公式', title: '插入数学公式', icon: Sigma, action: insertMath },
-  { label: '分割线', title: '插入分割线', icon: Minus, action: () => insertAtCursor('\n\n---\n\n') },
+const colorModeLabel = computed(() => (settings.colorMode === 'dark' ? t('lightMode') : t('darkMode')))
+const colorModeTitle = computed(() => (settings.colorMode === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')))
+const themeOptions = computed(() => [
+  { value: 'github', label: t('themeGithub') },
+  { value: 'minimal', label: t('themeMinimal') },
 ])
+const marginFields = computed(() => [
+  { key: 'top', label: t('marginTop') },
+  { key: 'right', label: t('marginRight') },
+  { key: 'bottom', label: t('marginBottom') },
+  { key: 'left', label: t('marginLeft') },
+])
+const toolbarTools = computed(() => [
+  { key: 'heading', label: t('toolHeadingShort'), title: t('toolHeading'), icon: Heading1, action: () => prefixLines('# ') },
+  { key: 'bold', label: t('toolBoldShort'), title: t('toolBold'), icon: Bold, action: () => wrapSelection('**', '**', t('placeholderBold')) },
+  { key: 'italic', label: t('toolItalicShort'), title: t('toolItalic'), icon: Italic, action: () => wrapSelection('*', '*', t('placeholderItalic')) },
+  { key: 'link', label: t('toolLinkShort'), title: t('toolLink'), icon: Link, action: insertLink },
+  { key: 'inline-code', label: t('toolInlineCodeShort'), title: t('toolInlineCode'), icon: Code2, action: () => wrapSelection('`', '`', 'code') },
+  { key: 'code-block', label: t('toolCodeBlockShort'), title: t('toolCodeBlock'), icon: Code2, action: insertCodeBlock },
+  { key: 'quote', label: t('toolQuoteShort'), title: t('toolQuote'), icon: Quote, action: () => prefixLines('> ') },
+  { key: 'list', label: t('toolListShort'), title: t('toolList'), icon: List, action: () => prefixLines('- ') },
+  { key: 'ordered-list', label: t('toolOrderedShort'), title: t('toolOrdered'), icon: ListOrdered, action: () => prefixOrderedLines() },
+  { key: 'table', label: t('toolTableShort'), title: t('toolTable'), icon: Table2, action: insertTable },
+  { key: 'image', label: t('toolImageShort'), title: t('toolImage'), icon: Image, action: insertImage },
+  { key: 'math', label: t('toolMathShort'), title: t('toolMath'), icon: Sigma, action: insertMath },
+  { key: 'hr', label: t('toolHrShort'), title: t('toolHr'), icon: Minus, action: () => insertAtCursor('\n\n---\n\n') },
+])
+const saveStatus = computed(() => {
+  switch (saveState.value.type) {
+    case 'restored':
+      return t('statusRestored')
+    case 'saving':
+      return t('statusSaving')
+    case 'saved':
+      return t('statusSaved', { time: formatStatusTime(saveState.value.time) })
+    case 'imported':
+      return t('statusImported', { name: saveState.value.name })
+    case 'new':
+      return t('statusNew')
+    case 'message':
+      return saveState.value.message
+    case 'unavailable':
+      return t('statusUnavailable')
+    default:
+      return t('statusLoading')
+  }
+})
 
-function loadStoredMarkdown() {
+function t(key, params = {}) {
+  return getMessage(settings.locale, key, params)
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value)
+
+  if (!Number.isFinite(number)) {
+    return fallback
+  }
+
+  return Math.min(max, Math.max(min, number))
+}
+
+function sanitizeTheme(value) {
+  return THEMES.includes(value) ? value : defaultSettings.theme
+}
+
+function sanitizeColorMode(value) {
+  return COLOR_MODES.includes(value) ? value : defaultSettings.colorMode
+}
+
+function sanitizePageSize(value) {
+  return PAGE_SIZES.includes(value) ? value : defaultSettings.pageSize
+}
+
+function loadStoredMarkdown(locale) {
   try {
-    return localStorage.getItem(STORAGE_KEY) || sampleMarkdown
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved !== null ? saved : getSampleMarkdown(locale)
   } catch {
-    return sampleMarkdown
+    return getSampleMarkdown(locale)
   }
 }
 
@@ -303,29 +361,44 @@ function loadStoredSettings() {
     return {
       ...defaultSettings,
       ...saved,
+      pageSize: sanitizePageSize(saved.pageSize),
+      theme: sanitizeTheme(saved.theme),
+      colorMode: sanitizeColorMode(saved.colorMode),
+      locale: resolveLocale(saved.locale || defaultSettings.locale),
+      fontSize: clampNumber(saved.fontSize, 12, 22, defaultSettings.fontSize),
+      lineHeight: clampNumber(saved.lineHeight, 1.2, 2.2, defaultSettings.lineHeight),
       margins: {
-        ...defaultSettings.margins,
-        ...(saved.margins || {}),
+        top: clampNumber(saved.margins?.top, 0, 60, defaultSettings.margins.top),
+        right: clampNumber(saved.margins?.right, 0, 60, defaultSettings.margins.right),
+        bottom: clampNumber(saved.margins?.bottom, 0, 60, defaultSettings.margins.bottom),
+        left: clampNumber(saved.margins?.left, 0, 60, defaultSettings.margins.left),
       },
     }
   } catch {
-    return { ...defaultSettings, margins: { ...defaultSettings.margins } }
+    return {
+      ...defaultSettings,
+      margins: { ...defaultSettings.margins },
+    }
   }
 }
 
+function formatStatusTime(date) {
+  return new Intl.DateTimeFormat(settings.locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 function scheduleSave() {
-  saveStatus.value = '正在自动保存'
+  saveState.value = { type: 'saving' }
   window.clearTimeout(saveTimer)
   saveTimer = window.setTimeout(() => {
     try {
       localStorage.setItem(STORAGE_KEY, markdown.value)
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-      saveStatus.value = `已自动保存 ${new Date().toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`
+      saveState.value = { type: 'saved', time: new Date() }
     } catch {
-      saveStatus.value = '本地保存不可用'
+      saveState.value = { type: 'unavailable' }
     }
   }, 500)
 }
@@ -344,14 +417,14 @@ function replaceRange(start, end, value, nextStart = start + value.length, nextE
   const text = markdown.value
   markdown.value = `${text.slice(0, start)}${value}${text.slice(end)}`
   nextTick(() => {
-    const textarea = editorRef.value
-    if (!textarea) return
-    textarea.focus({ preventScroll: true })
-    textarea.setSelectionRange(nextStart, nextEnd)
-    textarea.scrollTop = editorScrollTop
+    const currentTextarea = editorRef.value
+    if (!currentTextarea) return
+    currentTextarea.focus({ preventScroll: true })
+    currentTextarea.setSelectionRange(nextStart, nextEnd)
+    currentTextarea.scrollTop = editorScrollTop
     window.scrollTo(pageScrollX, pageScrollY)
     window.requestAnimationFrame(() => {
-      textarea.scrollTop = editorScrollTop
+      currentTextarea.scrollTop = editorScrollTop
       window.scrollTo(pageScrollX, pageScrollY)
     })
   })
@@ -408,13 +481,13 @@ function insertLink() {
   const textarea = editorRef.value
   if (!textarea) return
   const { selectionStart, selectionEnd } = textarea
-  const selected = markdown.value.slice(selectionStart, selectionEnd) || '链接文字'
+  const selected = markdown.value.slice(selectionStart, selectionEnd) || t('placeholderLinkText')
   const next = `[${selected}](https://example.com)`
   replaceRange(selectionStart, selectionEnd, next, selectionStart + 1, selectionStart + 1 + selected.length)
 }
 
 function insertImage() {
-  insertAtCursor('![图片描述](https://example.com/image.png)')
+  insertAtCursor(`![${t('imageAltPlaceholder')}](https://example.com/image.png)`)
 }
 
 function insertCodeBlock() {
@@ -422,7 +495,7 @@ function insertCodeBlock() {
 }
 
 function insertTable() {
-  insertAtCursor('\n| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |\n')
+  insertAtCursor(`\n| ${t('tableColumnOne')} | ${t('tableColumnTwo')} |\n| --- | --- |\n| ${t('tableCell')} | ${t('tableCell')} |\n`)
 }
 
 function insertMath() {
@@ -439,7 +512,7 @@ function importFile(event) {
 
   const isTextFile = /\.(md|markdown|txt)$/i.test(file.name) || /^text\//.test(file.type)
   if (!isTextFile) {
-    saveStatus.value = '仅支持 .md 或 .txt 文件'
+    saveState.value = { type: 'message', message: t('unsupportedFile') }
     event.target.value = ''
     return
   }
@@ -447,7 +520,7 @@ function importFile(event) {
   const reader = new FileReader()
   reader.onload = () => {
     markdown.value = String(reader.result || '')
-    saveStatus.value = `已导入 ${file.name}`
+    saveState.value = { type: 'imported', name: file.name }
     event.target.value = ''
     focusEditor()
   }
@@ -455,16 +528,20 @@ function importFile(event) {
 }
 
 function newDocument() {
-  if (markdown.value.trim() && !window.confirm('清空当前内容并新建文档？当前草稿会被新的空文档覆盖。')) {
+  if (markdown.value.trim() && !window.confirm(t('confirmNewDocument'))) {
     return
   }
   markdown.value = ''
-  saveStatus.value = '已新建空文档'
+  saveState.value = { type: 'new' }
   focusEditor()
 }
 
 function toggleSettings() {
   isSettingsOpen.value = !isSettingsOpen.value
+}
+
+function closeSettings() {
+  isSettingsOpen.value = false
 }
 
 function toggleColorMode() {
@@ -485,9 +562,20 @@ function updatePrintStyle() {
     }
 
     @media print {
+      html {
+        color-scheme: light !important;
+      }
+
       html,
-      body {
+      body,
+      #app,
+      .app-shell {
         background: #ffffff !important;
+      }
+
+      .app-shell {
+        min-height: auto !important;
+        padding: 0 !important;
       }
 
       .app-shell > :not(.print-only) {
@@ -503,6 +591,8 @@ function updatePrintStyle() {
         padding: 0 !important;
         max-width: none !important;
         min-height: auto !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
     }
   `
@@ -510,29 +600,55 @@ function updatePrintStyle() {
 }
 
 function printPdf() {
+  closeSettings()
   updatePrintStyle()
   window.setTimeout(() => window.print(), 50)
+}
+
+function handleWindowKeydown(event) {
+  if (event.key === 'Escape' && isSettingsOpen.value) {
+    closeSettings()
+  }
 }
 
 watch(markdown, scheduleSave)
 watch(settings, scheduleSave, { deep: true })
 watch(
-  () => saveStatus.value,
-  () => {
+  () => saveState.value.type,
+  (type) => {
     window.clearTimeout(statusTimer)
-    if (saveStatus.value.startsWith('已导入') || saveStatus.value.startsWith('已新建')) {
+    if (type === 'imported' || type === 'new') {
       statusTimer = window.setTimeout(scheduleSave, 100)
     }
   },
 )
+watch(
+  () => settings.locale,
+  (locale) => {
+    document.documentElement.lang = resolveLocale(locale)
+    document.title = t('appName')
+    if (isSampleMarkdown(markdown.value)) {
+      markdown.value = getSampleMarkdown(locale)
+    }
+  },
+  { immediate: true },
+)
+watch(
+  () => [settings.pageSize, settings.margins.top, settings.margins.right, settings.margins.bottom, settings.margins.left],
+  () => {
+    updatePrintStyle()
+  },
+)
 
 onMounted(() => {
-  saveStatus.value = '已恢复本地草稿'
+  saveState.value = { type: 'restored' }
   updatePrintStyle()
+  window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onBeforeUnmount(() => {
   window.clearTimeout(saveTimer)
   window.clearTimeout(statusTimer)
+  window.removeEventListener('keydown', handleWindowKeydown)
 })
 </script>

@@ -31,15 +31,16 @@ const md = new MarkdownIt({
   breaks: false,
   highlight(code, lang) {
     const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+    const languageClass = language === 'plaintext' ? 'language-plaintext' : `language-${language}`
 
     try {
       const highlighted = language === 'plaintext'
         ? md.utils.escapeHtml(code)
         : hljs.highlight(code, { language }).value
 
-      return `<pre class="hljs"><code>${highlighted}</code></pre>`
+      return `<pre><code class="hljs ${languageClass}">${highlighted}</code></pre>`
     } catch {
-      return `<pre class="hljs"><code>${md.utils.escapeHtml(code)}</code></pre>`
+      return `<pre><code class="hljs language-plaintext">${md.utils.escapeHtml(code)}</code></pre>`
     }
   },
 })
