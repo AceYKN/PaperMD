@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ 'settings-open': isSettingsOpen }">
+  <div class="app-shell" :class="{ 'settings-open': isSettingsOpen, 'theme-dark': settings.colorMode === 'dark' }">
     <header class="topbar">
       <div class="brand" aria-label="PaperMD">
         <FileText :size="22" stroke-width="2.2" />
@@ -21,6 +21,10 @@
         <button class="ghost-button settings-toggle" type="button" title="打开排版设置" @click="toggleSettings">
           <SlidersHorizontal :size="18" />
           <span>排版</span>
+        </button>
+        <button class="ghost-button" type="button" :title="colorModeTitle" @click="toggleColorMode">
+          <component :is="settings.colorMode === 'dark' ? Sun : Moon" :size="18" />
+          <span>{{ settings.colorMode === 'dark' ? '日间' : '夜间' }}</span>
         </button>
         <button class="primary-button" type="button" title="导出 PDF" @click="printPdf">
           <Printer :size="18" />
@@ -56,6 +60,7 @@
             :key="tool.label"
             type="button"
             :title="tool.title"
+            @mousedown.prevent
             @click="tool.action"
           >
             <component :is="tool.icon" :size="17" />
@@ -95,7 +100,7 @@
         />
       </section>
 
-      <aside class="settings-panel" aria-label="PDF 排版设置">
+      <aside class="settings-panel" aria-label="PDF 排版设置" :aria-hidden="!isSettingsOpen" :inert="!isSettingsOpen">
         <div class="panel-header">
           <div>
             <span class="panel-kicker">Export</span>
@@ -141,10 +146,6 @@
           <span>{{ settings.fontSize }}px · {{ settings.lineHeight.toFixed(1) }}</span>
         </div>
 
-        <button class="primary-button export-wide" type="button" @click="printPdf">
-          <Printer :size="18" />
-          <span>打开打印窗口</span>
-        </button>
       </aside>
     </main>
 
@@ -184,10 +185,12 @@ import {
   List,
   ListOrdered,
   Minus,
+  Moon,
   Printer,
   Quote,
   Sigma,
   SlidersHorizontal,
+  Sun,
   Table2,
   Upload,
   X,
@@ -240,6 +243,7 @@ const defaultSettings = {
   },
   fontSize: 16,
   lineHeight: 1.7,
+  colorMode: 'light',
 }
 
 const editorRef = ref(null)
@@ -267,6 +271,7 @@ const previewStyle = computed(() => ({
   '--doc-font-size': `${settings.fontSize}px`,
   '--doc-line-height': settings.lineHeight,
 }))
+const colorModeTitle = computed(() => (settings.colorMode === 'dark' ? '切换到日间模式' : '切换到黑夜模式'))
 
 const toolbarTools = computed(() => [
   { label: 'H1', title: '一级标题', icon: Heading1, action: () => prefixLines('# ') },
@@ -327,18 +332,28 @@ function scheduleSave() {
 
 function focusEditor() {
   nextTick(() => {
-    editorRef.value?.focus()
+    editorRef.value?.focus({ preventScroll: true })
   })
 }
 
 function replaceRange(start, end, value, nextStart = start + value.length, nextEnd = nextStart) {
+  const textarea = editorRef.value
+  const editorScrollTop = textarea?.scrollTop || 0
+  const pageScrollX = window.scrollX
+  const pageScrollY = window.scrollY
   const text = markdown.value
   markdown.value = `${text.slice(0, start)}${value}${text.slice(end)}`
   nextTick(() => {
     const textarea = editorRef.value
     if (!textarea) return
-    textarea.focus()
+    textarea.focus({ preventScroll: true })
     textarea.setSelectionRange(nextStart, nextEnd)
+    textarea.scrollTop = editorScrollTop
+    window.scrollTo(pageScrollX, pageScrollY)
+    window.requestAnimationFrame(() => {
+      textarea.scrollTop = editorScrollTop
+      window.scrollTo(pageScrollX, pageScrollY)
+    })
   })
 }
 
@@ -452,6 +467,10 @@ function toggleSettings() {
   isSettingsOpen.value = !isSettingsOpen.value
 }
 
+function toggleColorMode() {
+  settings.colorMode = settings.colorMode === 'dark' ? 'light' : 'dark'
+}
+
 function updatePrintStyle() {
   const id = 'papermd-print-style'
   const existing = document.getElementById(id)
@@ -477,6 +496,8 @@ function updatePrintStyle() {
 
       .print-only {
         display: block !important;
+        color: #1f2933 !important;
+        background: #ffffff !important;
         box-shadow: none !important;
         border: 0 !important;
         padding: 0 !important;
