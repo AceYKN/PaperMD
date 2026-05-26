@@ -5,6 +5,7 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/PaperMD/' : '/',
   plugins: [vue()],
   build: {
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         manualChunks: {
